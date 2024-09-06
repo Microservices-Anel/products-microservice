@@ -6,7 +6,7 @@ import { PaginationDto } from 'src/common';
 import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
-export class ProductsService extends PrismaClient implements OnModuleInit  {
+export class ProductsService extends PrismaClient implements OnModuleInit {
 
   private readonly logger = new Logger('ProductsService');
 
@@ -17,7 +17,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit  {
 
   create(createProductDto: CreateProductDto) {
     console.log(createProductDto);
-    
+
     return this.product.create({
       data: createProductDto
     });
@@ -36,12 +36,12 @@ export class ProductsService extends PrismaClient implements OnModuleInit  {
       data: await this.product.findMany({
         where: { available: true },
         take: limit,
-        skip: (page - 1) * limit  
+        skip: (page - 1) * limit
       }),
       meta: {
         page,
         lastPage,
-        total:totalPages
+        total: totalPages
       },
 
     }
@@ -51,11 +51,12 @@ export class ProductsService extends PrismaClient implements OnModuleInit  {
     const product = await this.product.findFirst({
       where: { id, available: true }
     })
-  
-    if( !product ) {
+
+    if (!product) {
       throw new RpcException({
-        status: HttpStatus.BAD_REQUEST, 
-        message:`Product #${id} not found`});
+        status: HttpStatus.BAD_REQUEST,
+        message: `Product #${id} not found`
+      });
     }
 
     return product;
@@ -69,7 +70,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit  {
 
     const product = await this.findOne(id);
 
-    if( !product ) {
+    if (!product) {
       throw new RpcException(`Product #${id} not found`);
     }
 
@@ -90,4 +91,28 @@ export class ProductsService extends PrismaClient implements OnModuleInit  {
     });
 
   }
+
+  async validateProducts(ids: number[]) {
+    ids = Array.from(new Set(ids));
+
+    const products = await this.product.findMany({
+      where: {
+        id: { 
+          in: ids 
+        }
+      }
+    });
+
+    if(products.length !== ids.length) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Some products were not found'
+      });
+    }
+
+    return products;
+
+  }
+
+
 }
